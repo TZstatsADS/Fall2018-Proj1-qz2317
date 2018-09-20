@@ -137,29 +137,30 @@ rowTotals <- slam::row_sums(dtm)
 dtm <- dtm[rowTotals > 0, ]
 
 #Number of topics
-topic <- 10
+k <- 10
 
 #Run LDA 
-ldaOut <- LDA(dtm,topic,method="Gibbs",control=list(nstart=5,seed = list(2003,5,63,100001,765),best=TRUE,burnin = 800, iter = 400, thin=100))
+ldaOut <- LDA(dtm,k,method="Gibbs",control=list(nstart=5,seed = list(2003,5,63,100001,765),best=TRUE,burnin = 800, iter = 400, thin=100))
 
 #write out results
 ldaOut.topics <- as.matrix(topics(ldaOut))
-# Total number per each topic
-table(c(1:k, ldaOut.topics)) 
+table(c(1:k, ldaOut.topics))   # Total number per each topic
 
 #top 10 terms in each topic
 ldaOut.terms <- as.matrix(terms(ldaOut,10))
-ldaOut.terms  
 
 #probabilities associated with each topic assignment
 topicProbabilities <- as.data.frame(ldaOut@gamma)
+
 terms.beta=ldaOut@beta
 terms.beta=scale(terms.beta)
 topics.terms=NULL
+
 for(i in 1:k){
   topics.terms=rbind(topics.terms, ldaOut@terms[order(terms.beta[i,], decreasing = TRUE)[1:10]])
 }
 
+ldaOut.terms   #top 10 terms in each topic
 
 ```
 
