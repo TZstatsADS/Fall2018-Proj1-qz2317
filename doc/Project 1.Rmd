@@ -130,6 +130,29 @@ ggplot(keywords50,aes(fill=keywords50$Keyword)) +
 
 We can find that from both graphs above, the frequent key words come up in these moment are related to friend and family.
 
+##Step 3: LDA
+```{r}
+dtm <- VCorpus(VectorSource(hm_data$text)) %>%DocumentTermMatrix()
+rowTotals <- slam::row_sums(dtm)
+dtm <- dtm[rowTotals > 0, ]
+
+#Number of topics
+k <- 10
+
+#Run LDA using Gibbs sampling
+ldaOut <- LDA(dtm, k, method="Gibbs", control=list(nstart=5, seed = list(2003,5,63,100001,765), best=TRUE, burnin = 800, iter = 400, thin=100))
+
+Out <- as.matrix(topics(ldaOut))
+
+# Total number per each topic
+table(c(1:k, Out))   
+
+#top 10 terms in each topic
+ldaOut.terms <- as.matrix(terms(ldaOut,10))
+ldaOut.terms
+```
+
+
 
 #Part 3: Analysis Regarding Nationality
 
