@@ -85,9 +85,9 @@ hm_data <- hm_data %>%
 ```
 
 
-#Part 2: Topic Modeling
+#Part 2: Key words
 
-In this section, firstly we will find out the key words about these moment. Then use LDA to do some topic modeling to find out the topic that comes frequently in these moment.
+In this section, firstly we will find out the key words about these moment.
 
 ##Step 1: Create a word cloud with top 200 key words.
 
@@ -129,67 +129,6 @@ ggplot(keywords50,aes(fill=keywords50$Keyword)) +
 ```
 
 We can find that from both graphs above, the frequent key words come up in these moment are related to friend and family.
-
-##Step 3: LDA
-```{r}
-dtm <- VCorpus(VectorSource(hm_data$text)) %>%DocumentTermMatrix()
-rowTotals <- slam::row_sums(dtm)
-dtm <- dtm[rowTotals > 0, ]
-
-#Number of topics
-k <- 10
-
-#Run LDA 
-ldaOut <- LDA(dtm,k,method="Gibbs",control=list(nstart=5,seed = list(2003,5,63,100001,765),best=TRUE,burnin = 800, iter = 400, thin=100))
-
-#write out results
-ldaOut.topics <- as.matrix(topics(ldaOut))
-table(c(1:k, ldaOut.topics))   # Total number per each topic
-
-#top 10 terms in each topic
-ldaOut.terms <- as.matrix(terms(ldaOut,10))
-
-#probabilities associated with each topic assignment
-topicProbabilities <- as.data.frame(ldaOut@gamma)
-
-terms.beta=ldaOut@beta
-terms.beta=scale(terms.beta)
-topics.terms=NULL
-
-for(i in 1:k){
-  topics.terms=rbind(topics.terms, ldaOut@terms[order(terms.beta[i,], decreasing = TRUE)[1:10]])
-}
-
-ldaOut.terms   #top 10 terms in each topic
-
-```
-
-
-##Step 4: Based on the result from LDA, conclude top 10 topic from words. Then mark each topic.
-
-```{r}
-
-top10topic=c("Work","Family","Vacation","Pets","People","Celebration","Social","Entertainment","School","Exercise")
-
-hm_data <- hm_data[rowTotals > 0, ]
-hm_data$ldatopic <- as.vector(ldaOut.topics)
-hm_data$ldahash <-top10topic[ldaOut.topics]
-colnames(topicProbabilities) <- top10topic
-
-hm_data.df <- cbind(hm_data, topicProbabilities)
-
-
-wordcount_by_topic <- hm_data.df %>%
-  unnest_tokens(word, text) %>%
-  group_by(lda) %>%
-  dplyr::count(word, sort = TRUE)
-
-wordcount_by_topic %>% 
-  slice(1:10) %>%
-  mutate(word = reorder(word, n)) %>%
-  ggplot(aes(x = word, y = n, color = lda)) + geom_col() +  facet_wrap(~lda, scales = "free") + xlab(NULL) + ylab("Word Frequency")+ coord_flip()
-
-```
 
 
 #Part 3: Analysis Regarding Nationality
@@ -295,26 +234,5 @@ comparison.cloud(tdm2, random.order=FALSE,colors=c('lightpink','lightblue'),
 ```
 
 From the comparison cloud, we can see that words like 'life' and 'day' were more front-and-center in India than in USA.
+While 'watched', 'dog' is large in the USA side.
 
-
-##Step 5: Heat map
-
-```{r}
-
-usatopic<-as.data.frame(table(usa$ldatopic))
-indtopic<-as.data.frame(table(ind$ldatopic))
-colnames(indtopic)<-c('Topic','ind')
-colnames(usatopic)<-c('Topic','usa')
-
-countrysummary<-merge(indtopic,usatopic,by='Topic')
-
-heatmap.2(as.matrix(countrysummary[,-1]), Rowv = FALSE,
-           scale = "column", key=F, na.rm = T,
-           labRow = c("Work","Family","Vacation","Pets","People","Celebration","Social","Entertainment","School","Exercise"),
-          labCol = c('IND','USA'),
-          dendrogram="none",
-           srtCol=0, adjCol=c(1,1)
-          )
-
-```
-According to the heat map we can see that the topic difference between Indian and USA's happy moment.
